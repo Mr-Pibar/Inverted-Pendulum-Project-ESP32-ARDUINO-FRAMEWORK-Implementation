@@ -1,18 +1,15 @@
 #include <Arduino.h>
+#include <config.h>
+#include "stepperControl.h"
 
-// put function declarations here:
-int myFunction(int, int);
-
-void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+void setup(){
+  initStepper(DIR_PIN, STEP_PIN);
+  delay(1000);
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
-}
-
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+void loop(){
+  moveStep_primitive(DIR_PIN, STEP_PIN, STEPPER_ONE_REVOLUTION, CW, SPEED_DELAY);
+  delay(2000);
+  moveStep_primitive(DIR_PIN, STEP_PIN, STEPPER_ONE_REVOLUTION, CCW, SPEED_DELAY);
+  delay(2000);
 }
