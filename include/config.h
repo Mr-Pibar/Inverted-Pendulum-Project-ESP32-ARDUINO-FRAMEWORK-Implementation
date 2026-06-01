@@ -3,8 +3,8 @@
 
 //stepper controls
 
-#define STEP_PIN 19
-#define DIR_PIN 18
+#define STEP_PIN 14
+#define DIR_PIN 12
 #define STEPPER_ONE_REVOLUTION 1600
 #define CW 1
 #define CCW 0
