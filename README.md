@@ -30,7 +30,7 @@ Current hardware used:
 
 # Feature Implementation
 
-- HAL — encoders reading correctly, motor moving, homing working        (ongoing)
+- HAL — encoders reading correctly, motor moving, homing working        (ongoing) // Stepper Done
 - Control loop timing, velocity estimation, serial telemetry output     (ongoing)
 - PD balance controller (manually swinging pendulum up, catch it)       (draft)
 - LQR design in Python, implement on ESP32, compare to PD               (draft)

@@ -3,11 +3,16 @@
 
 //stepper controls
 
-#define STEP_PIN 19
-#define DIR_PIN 18
-#define STEPPER_ONE_REVOLUTION 1600
-#define CW 1
-#define CCW 0
-#define SPEED_DELAY 200
+#define STEP_PIN    26
+#define DIR_PIN     27
+#define ENABLE_PIN  14
+#define BUZZER_PIN  23
+#define ONE_REV_STEPPER 1600
+
+#define ENCODER_A 34
+#define ENCODER_B 35
+
+#define HOME_PIN    25
+#define END_PIN     33
 
 #endif

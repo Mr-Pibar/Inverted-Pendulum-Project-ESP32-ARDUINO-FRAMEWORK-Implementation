@@ -1,23 +1,30 @@
 #include <Arduino.h>
+#include <FastAccelStepper.h>
 #include <config.h>
-#include "wifiAndMQTT.h"
-#include <stepperControl.h>
-#include <connectivity.h>
+#include <setup.h>
+
+//primary containers
+
+FastAccelStepperEngine ENGINE = FastAccelStepperEngine();
+FastAccelStepper* STEPPER = nullptr;
+
+Setup SETUP;
+int32_t rail_count;
 
 void setup(){
-  Serial.begin(9600);
-  initStepper(DIR_PIN, STEP_PIN);
-  initWifi();
-  initMQTT();
-  delay(1000);
+  Serial.begin(115200);
+  SETUP.FAST_ACCEL_STEPPER(ENGINE, STEPPER);
+  SETUP.HOMING(STEPPER);
+  SETUP.RAIL_COUNT(STEPPER, &rail_count);
 }
 
+
 void loop(){
-  reconnectMQTT();
-  updateMQTT();
-  if(step_mqtt > 0){
-    moveStepLinear_primitive(DIR_PIN, STEP_PIN, step_mqtt, dir_mqtt);
-    step_mqtt = 0;
+  if(Serial.available() && STEPPER){
+    int n_revolution = Serial.parseInt();
+
+    STEPPER->move(ONE_REV_STEPPER * n_revolution);
+    Serial.println("Moving");
+    Serial.print(n_revolution);
   }
-  delay(100);
 }
