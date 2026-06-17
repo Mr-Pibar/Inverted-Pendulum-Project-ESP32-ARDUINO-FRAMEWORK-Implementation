@@ -1,12 +1,14 @@
 #include <Arduino.h>
 #include <FastAccelStepper.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 #include <config.h>
 #include <setup.h>
+#include <oled.h>
 
-void testBuzzer()
-{
+static void Buzzer(int time_ms){
     gpio_set_level((gpio_num_t)BUZZER_PIN, 1);
-    delay(1000);
+    delay(time_ms);
     gpio_set_level((gpio_num_t)BUZZER_PIN, 0);
 }
 
@@ -24,7 +26,7 @@ void Setup::FAST_ACCEL_STEPPER(FastAccelStepperEngine &engine, FastAccelStepper*
 
     if(stepper != nullptr){
         stepper->setDirectionPin(DIR_PIN);
-        stepper->setEnablePin(ENABLE_PIN, false);
+        stepper->setEnablePin(ENABLE_PIN, true);
         stepper->enableOutputs();
     }
 
@@ -32,13 +34,15 @@ void Setup::FAST_ACCEL_STEPPER(FastAccelStepperEngine &engine, FastAccelStepper*
 
     delay(2000);
 
-    testBuzzer();
+    Buzzer(1000);
 }
 
-void Setup::HOMING(FastAccelStepper* &stepper){
+void Setup::HOMING(FastAccelStepper* &stepper, Adafruit_SSD1306* display){
     gpio_set_direction(((gpio_num_t) HOME_PIN), GPIO_MODE_INPUT);
     Serial.println("[DEBUG] BEGIN HOMING");
     
+    HOMING_OLED(display);
+
     //fast homing
     stepper->setSpeedInHz(4000);
     stepper->setAcceleration(3000);
@@ -50,6 +54,7 @@ void Setup::HOMING(FastAccelStepper* &stepper){
     stepper->forceStop();
 
     delay(2000);
+    Buzzer(500);
 
     //backoff
     stepper->setSpeedInHz(1000);
@@ -77,9 +82,15 @@ void Setup::HOMING(FastAccelStepper* &stepper){
     delay(2000);
 }
 
-void Setup::RAIL_COUNT(FastAccelStepper* &stepper, int32_t* RAIL_LENGTH){
+void Setup::RAIL_COUNT(FastAccelStepper* &stepper, int32_t* RAIL_LENGTH, Adafruit_SSD1306* display){
     gpio_set_direction(((gpio_num_t) END_PIN), GPIO_MODE_INPUT);
     Serial.println("[DEBUG] BEGIN Measuring rail");
+
+    RAIL_COUNT_OLED(display);
+
+    Buzzer(100);
+    delay(300);
+    Buzzer(100);
 
     //fast homing
     stepper->setSpeedInHz(4000);
@@ -87,13 +98,16 @@ void Setup::RAIL_COUNT(FastAccelStepper* &stepper, int32_t* RAIL_LENGTH){
     stepper->runBackward();
     
     while(gpio_get_level((gpio_num_t) END_PIN) == HIGH){
+        int32_t curr = stepper->getCurrentPosition();
+        RAIL_DISPLAY_COUNT(display, curr);
         Serial.print("[DEBUG]: CURRENT POS:");
-        Serial.println(stepper->getCurrentPosition());
+        Serial.println(curr);
         delay(1);
     }
 
     stepper->forceStop();
     delay(2000);
+    Buzzer(500);
 
     //backoff
     stepper->setSpeedInHz(1000);
@@ -101,6 +115,10 @@ void Setup::RAIL_COUNT(FastAccelStepper* &stepper, int32_t* RAIL_LENGTH){
     stepper->move(ONE_REV_STEPPER);
 
     while(stepper->isRunning()){
+        int32_t curr = stepper->getCurrentPosition();
+        RAIL_DISPLAY_COUNT(display, curr);
+        Serial.print("[DEBUG]: CURRENT POS:");
+        Serial.println(curr);
         delay(1);
     }
 
@@ -110,8 +128,10 @@ void Setup::RAIL_COUNT(FastAccelStepper* &stepper, int32_t* RAIL_LENGTH){
     stepper->runBackward();
 
     while(gpio_get_level((gpio_num_t) END_PIN) == HIGH){
+        int32_t curr = stepper->getCurrentPosition();
+        RAIL_DISPLAY_COUNT(display, curr);
         Serial.print("[DEBUG]: CURRENT POS:");
-        Serial.println(stepper->getCurrentPosition());
+        Serial.println(curr);
         delay(1);
     }
 
@@ -128,10 +148,16 @@ void Setup::RAIL_COUNT(FastAccelStepper* &stepper, int32_t* RAIL_LENGTH){
     //pass value;
     *RAIL_LENGTH = abs(temp);
 
+    RAIL_LENGTH_OLED(display, (float)((float)(*RAIL_LENGTH) / (float)STEPS_PER_MM));
+
     //go to middle;
     int32_t middle = *RAIL_LENGTH / 2;
 
     delay(2000);
+
+    CENTERING_OLED(display);
+
+    Buzzer(500);
 
     Serial.println("[DEBUG] CENTERING");
     stepper->setSpeedInHz(3000);
@@ -146,4 +172,25 @@ void Setup::RAIL_COUNT(FastAccelStepper* &stepper, int32_t* RAIL_LENGTH){
     Serial.println(stepper->getCurrentPosition());
     Serial.println("[DEBUG] DONE CENTERING");
     delay(2000);
+
+    Buzzer(1000);
+    delay(200);
+    Buzzer(100);
+
+    DONE_SETUP_OLED(display);
 }   
+
+void Setup::OLED(Adafruit_SSD1306* display){
+    Wire.begin(OLED_SDA, OLED_SCL);
+    
+    if(!display->begin(SSD1306_SWITCHCAPVCC, 0x3C)){
+        while(true){
+            Buzzer(500);
+            delay(200);
+        }
+    }
+    display->clearDisplay();
+    delay(10);
+
+    drawScreen_1(display);
+}
